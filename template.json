@@ -1,0 +1,70 @@
+{
+  "name": "hedera-committee",
+  "description": "USD-denominated digital ROSCA (committee) on Hedera: Chainlink HBAR/USD oracle, HSS scheduled payouts, HCS audit log.",
+  "create-scaffold-hbar": {
+    "capabilities": {
+      "frontend": ["nextjs-app"],
+      "solidityFramework": ["hardhat"],
+      "packageManager": ["npm"]
+    },
+    "defaults": {
+      "frontend": "nextjs-app",
+      "solidityFramework": "hardhat",
+      "packageManager": "npm"
+    },
+    "requirements": {
+      "node": ">=20.18.3"
+    },
+    "envVars": [
+      {
+        "key": "HCS_OPERATOR_ACCOUNT_ID",
+        "description": "Hedera account ID (0.0.x) whose ECDSA key signs committee audit messages on HCS"
+      },
+      {
+        "key": "HCS_OPERATOR_PRIVATE_KEY",
+        "description": "ECDSA private key for the HCS operator account - server side only, never commit"
+      },
+      {
+        "key": "HCS_TOPIC_ID",
+        "description": "HCS topic ID for committee audit records, printed by npm run hardhat:hcs:topic --"
+      }
+    ],
+    "instructions": [
+      "+Fund a testnet deployer with the Hedera Portal faucet, then deploy: {run:framework:deploy} --network hederaTestnet",
+      "Committee installments are USD-denominated; the Chainlink HBAR/USD feed prices each contribution at deposit time.",
+      "Local Hardhat has no HSS precompile, so the deploy script wires a MockScheduleService there."
+    ],
+    "outro": {
+      "sections": [
+        {
+          "title": "Next steps",
+          "steps": [
+            {
+              "label": "Generate a deployer account",
+              "command": "{run:framework:account:generate}"
+            },
+            {
+              "label": "Start a local Hedera-forked chain",
+              "command": "{run:framework:chain}"
+            },
+            {
+              "label": "Deploy the committee contracts",
+              "command": "{run:framework:deploy} --network localhost"
+            },
+            {
+              "label": "Run the contract tests",
+              "command": "{run:framework:test}"
+            },
+            {
+              "label": "Start the frontend",
+              "command": "{run:next:dev}"
+            },
+            {
+              "url": "https://docs.hedera.com/solutions/tools/scaffold-hbar/index"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

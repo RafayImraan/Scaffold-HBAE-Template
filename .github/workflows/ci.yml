@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup node env
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Compile contracts
+        run: npm run hardhat:compile
+
+      - name: Contract tests
+        run: npm run hardhat:test
+
+      - name: Lint (nextjs + hardhat)
+        run: npm run lint -- --max-warnings=0
+
+      - name: Typecheck (nextjs + hardhat)
+        run: npm run next:check-types && npm run hardhat:check-types
+
+      - name: Build frontend
+        run: npm run next:build
+
+      - name: Local chain deploy smoke test
+        run: |
+          npm run hardhat:chain &
+          timeout 90s bash -c 'until curl -s -X POST http://127.0.0.1:8545 -H "Content-Type: application/json" --data "{\"jsonrpc\":\"2.0\",\"method\":\"web3_clientVersion\",\"params\":[],\"id\":1}" >/dev/null; do sleep 2; done'
+          npm run hardhat:deploy -- --network localhost
