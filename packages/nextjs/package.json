@@ -9,6 +9,7 @@
     "format": "prettier --write .",
     "lint": "next lint",
     "serve": "next start",
+    "smoke": "node scripts/smoke.mjs",
     "start": "next dev"
   },
   "dependencies": {

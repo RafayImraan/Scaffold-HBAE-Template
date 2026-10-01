@@ -11,6 +11,7 @@
     "check-types": "tsc --noEmit --incremental",
     "compile": "hardhat compile",
     "clean": "hardhat clean",
+    "demo:testnet": "hardhat run scripts/demo/testnetDemo.ts --network hederaTestnet",
     "deploy": "ts-node scripts/runHardhatDeployWithPK.ts",
     "flatten": "hardhat flatten",
     "fork": "cross-env MAINNET_FORKING_ENABLED=true HEDERA_FORKING=true hardhat node --network hardhat --no-deploy",

@@ -17,6 +17,7 @@
     "hardhat:check-types": "npm run check-types -w @sh/hardhat --",
     "hardhat:clean": "npm run clean -w @sh/hardhat --",
     "hardhat:compile": "npm run compile -w @sh/hardhat --",
+    "hardhat:demo:testnet": "npm run demo:testnet -w @sh/hardhat --",
     "hardhat:deploy": "npm run deploy -w @sh/hardhat --",
     "hardhat:flatten": "npm run flatten -w @sh/hardhat --",
     "hardhat:fork": "npm run fork -w @sh/hardhat --",
@@ -26,6 +27,7 @@
     "hardhat:verify": "npm run verify -w @sh/hardhat --",
     "hardhat:verify:testnet": "npm run verify:testnet -w @sh/hardhat --",
     "hardhat:verify:mainnet": "npm run verify:mainnet -w @sh/hardhat --",
+    "hcs:topic": "node packages/nextjs/scripts/hcs/createTopic.mjs",
     "lint": "npm run lint -w @sh/nextjs -- && npm run lint -w @sh/hardhat --",
     "next:build": "npm run build -w @sh/nextjs --",
     "next:check-types": "npm run check-types -w @sh/nextjs --",
@@ -33,6 +35,7 @@
     "next:format": "npm run format -w @sh/nextjs --",
     "next:lint": "npm run lint -w @sh/nextjs --",
     "next:serve": "npm run serve -w @sh/nextjs --",
+    "next:smoke": "npm run smoke -w @sh/nextjs --",
     "next:start": "npm run start -w @sh/nextjs --",
     "test": "npm run test -w @sh/hardhat --"
   },

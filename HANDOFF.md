@@ -3,6 +3,38 @@
 Session resume notes. Source of truth: `BRIEF.md` (bounty), `PLAN.md` (approved plan),
 `RESEARCH.md` (evidence + probe data).
 
+## Latest status (2026-10-01)
+
+- Testnet deploy DONE: `ChainlinkHbarUsdAdapter` = `0x2545c7d156045158C081A09F157da44DcD322d23`
+  (block 41219920), `CommitteeFactory` = `0x9de9c4F3D1f52eA4278d6e8210F51C79eA88D9CF`
+  (block 41219927), unitsPerHbar = 1e8. `deployedContracts.ts` regenerated (296 entries only).
+- `npm run hardhat:test --` → **44 passing (7m), 0 failing**, incl. `Committee.fullCycle`
+  under BOTH regimes (`unitsPerHbar = tinybars (Hedera)` and `unitsPerHbar = wei (local)`),
+  plus relayScale identity tests (1e10 tinybars / 1 wei, product = 1e18).
+- HCS topic CREATED: **0.0.10809816** via `npm run hcs:topic --` (idempotent; writes
+  `HCS_TOPIC_ID` into root `.env`).
+- Clock skew finding: this machine runs ~119s BEHIND Hedera consensus (Windows Time
+  service stopped, `0x80070426`). SDK default valid-duration 120s → `TRANSACTION_EXPIRED`.
+  Workaround: `.setTransactionValidDuration(180)` (Hedera max) in `createTopic.mjs` and
+  `/api/hcs`. Margin ~61s - enable W32Time if drift grows.
+- Testnet demo script READY: `npm run hardhat:demo:testnet --`
+  (exit 2 = insufficient funds, exit 3 = scheduleCall failure → STOP for design review,
+  exit 4 = unit-math mismatch). Preflight needs ~23.7 HBAR; deployer holds 6.91 →
+  **demo BLOCKED on funding (~17 HBAR short)**.
+- Frontend committed (home + detail), blockexplorer removed, `npm run next:smoke --`
+  green (5 core routes 200).
+
+## Next (in order)
+
+1. Fund deployer `0x6b93D069f3071aceC504339647fcB701949A43FB` (+~17 HBAR) → start
+   `npm run next:serve --` → `npm run hardhat:demo:testnet --` (short 6-min round):
+   create/join/contribute/HCS evidence, verify HSS auto-finalize vs manual path.
+2. Record every Hashscan link + unit-math confirmation in `docs/RESEARCH.md`
+   (move PLAN/RESEARCH to `docs/` first) and the README Hashscan section.
+3. Docs gate: README (Limitations first item = pot-receiver stops contributing,
+   Units section), AGENTS.md npm-only rewrite, `scripts/verify-gate.sh`, CI ABI-drift check.
+4. Phase 4 self-audit against `BRIEF.md` scoring + gate checklist.
+
 ## Done
 
 - Phase 0 `RESEARCH.md` (oracle/HSS/HCS/units research; §9 = Step-0 native-unit probe evidence).
@@ -23,30 +55,6 @@ Session resume notes. Source of truth: `BRIEF.md` (bounty), `PLAN.md` (approved 
   - Testnet (hashio): `msg.value = sent / 1e10` (tinybars); `eth_getBalance = mirror × 1e10`;
     outbound transfers arrive unscaled; mirror delta in tinybars.
   - Probe contract `0x2060C294d15672c7870E1162346Ba24d1d435DbA`.
-
-## Next (in order)
-
-1. Contracts (PLAN §4.2-4.5) with approved unit model:
-   - `interfaces/IPriceOracle.sol`, `IAggregatorV3.sol`, `IHederaScheduleService.sol`
-   - `oracle/ChainlinkHbarUsdAdapter.sol`, `oracle/MockPriceOracle.sol`
-   - `mocks/MockScheduleService.sol`, `test/MaliciousReceiver.sol`
-   - `Committee.sol` (immutable `unitsPerHbar`, `relayScale`, `usdToNative`, `quoteContribution`,
-     `quoteTxValue`, `min(pot, balance)` payout, `roundEndsAt = block.timestamp + roundDuration`),
-     `CommitteeFactory.sol` (chainId-based `unitsPerHbar` in deploy wiring, HSS `0x16b` or mock).
-2. `deploy/00_deploy_oracle.ts`, `01_deploy_schedule_mock.ts` (local only), `02_deploy_factory.ts`
-   — deploy script sets `unitsPerHbar` from `chainId` (296/295 → `1e8`, else `1e18`).
-3. Tests (PLAN §9): full cycle with BOTH `unitsPerHbar` values, `hbarUnits.test.ts` importing
-   `packages/nextjs/utils/hbarUnits.ts`, oracle/contribution/payout/reentrancy suites.
-4. Frontend helper `packages/nextjs/utils/hbarUnits.ts` (tx value conversion used by UI).
-5. API routes: `app/api/health/route.ts`, `app/api/hcs/route.ts`
-   (`POST { txHash }` only, server fetches receipt via `HCS_RPC_URL`, verifies + parses events,
-   no rate limiter; `GET` mirrors topic messages). Root `.env` loader, no client keys.
-6. Pages: `app/page.tsx`, `app/committee/[address]/page.tsx`, `scripts/smoke.mjs`,
-   `npm run next:smoke` wiring.
-7. Docs: README (Units section, Limitations first item = pot-receiver stops contributing),
-   AGENTS.md npm-only rewrite, move PLAN/RESEARCH to `docs/`, `scripts/verify-gate.sh`.
-8. Testnet deploy + demo: factory + committee, real contribute/refund/payout txs,
-   HCS topic, Hashscan links appended to `docs/RESEARCH.md` (mandated evidence).
 
 ## Decisions (do not re-litigate)
 
@@ -76,6 +84,7 @@ npm run lint -- --max-warnings=0
 npm run next:check-types
 npm run hardhat:check-types --
 npm run next:build
+npm run next:smoke --
 npm run hardhat:compile
 npm run hardhat:test --
 
@@ -86,9 +95,9 @@ npm run next:start --
 
 # testnet (keys in .env files, gitignored)
 npx hardhat deploy --network hederaTestnet   # in packages/hardhat
-npm run hardhat:hcs:topic --
+npm run hcs:topic --                         # creates topic, writes HCS_TOPIC_ID to .env
+npm run next:serve --                        # app must run for demo HCS POSTs
 npm run hardhat:demo:testnet --
-npm run hardhat:demo:payout --
 
 # gate
 bash scripts/verify-gate.sh

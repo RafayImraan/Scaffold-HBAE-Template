@@ -178,6 +178,7 @@ export async function POST(request: NextRequest) {
       const submit = await new TopicMessageSubmitTransaction()
         .setTopicId(TopicId.fromString(topicId))
         .setMessage(canonical)
+        .setTransactionValidDuration(180)
         .execute(sdkClient);
       const submitReceipt = (await submit.getReceipt(sdkClient)) as unknown as {
         sequenceNumber: bigint;
