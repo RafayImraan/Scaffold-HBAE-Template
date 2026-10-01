@@ -18,6 +18,11 @@ export function formatUsdE18(usdE18: bigint): string {
   return formatUsdScaled(usdE18, 10n ** 18n);
 }
 
+/** Oracle price (1e-18 USD per HBAR) with the precision a unit price needs. */
+export function formatPriceE18(priceE18: bigint): string {
+  return `$${(Number((priceE18 * 10_000n) / 10n ** 18n) / 10_000).toFixed(4)}`;
+}
+
 function formatUsdScaled(amount: bigint, scale: bigint): string {
   const cents = Number((amount * 100n) / scale) / 100;
   return `$${cents.toFixed(2)}`;
