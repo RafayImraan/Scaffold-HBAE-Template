@@ -120,17 +120,23 @@ block-explorer UI removed (and its now-orphaned helpers), Debug Contracts kept.
 
 ## 4. Contracts
 
-### 4.1 Units (documented in NatSpec + README)
+### 4.1 Units (measured in Step 0 - RESEARCH.md section 9)
 
 | Quantity | Unit in code |
 | --- | --- |
 | USD amount per round | `uint256` **1e-6 USD** (e.g. `20_000_000` = $20.00) |
-| Oracle price | adapter returns **priceE18** = USD-per-HBAR × 1e18 (feed has 8 decimals → ×10^10) |
-| `msg.value`, pot, payouts | **wei** (18 decimals, Hedera JSON-RPC convention) |
-| HAPI / tinybars | 8 decimals — used only in docs/comments, converted by ×1e10 where needed |
+| Oracle price | adapter returns **priceE18** = USD-per-HBAR x 1e18 (feed has 8 decimals -> x10^10) |
+| `msg.value`, pot, payouts, `address(this).balance` | **chain-native EVM units**: tinybars (`1 HBAR = 1e8`) on Hedera testnet/mainnet, wei (`1e18`) on the local Hardhat fork - stored as immutable `unitsPerHbar` set by the deploy script (`1e8` Hedera / `1e18` local) |
+| tx `value` field sent to hashio | native amount x **relayScale**, `relayScale = 1e18 / unitsPerHbar` (`1e10` Hedera / `1` local) - the relay divides `value` by `1e10` before execution (measured) |
 
-`requiredWei = ceil(usdAmountE6 * 1e30 / priceE18)` — ceil division so the pot can never be
-short; any overpay is refunded in the same tx.
+One library owns the conversions: the contract reads `unitsPerHbar`, the frontend quote calls
+`committee.usdToNative(usdAmountE6)` (no client-side constants), demo scripts send
+`nativeAmount * relayScale`. `MockScheduleService` and every test are deployed with the same
+`unitsPerHbar` they assert against.
+
+`requiredNative = ceil(usdAmountE6 * 1e12 * unitsPerHbar / priceE18)` - ceil division so the pot
+can never be short; any overpay is refunded in the same tx.
+
 
 ### 4.2 `IPriceOracle` / adapter
 

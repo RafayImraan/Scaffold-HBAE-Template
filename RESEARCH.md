@@ -282,8 +282,56 @@ drain user funds. (See PLAN.)
 
 ## 8. Open questions (blocking, for the user)
 
-1. **GitHub owner/repo** for the template (needed verbatim in the README's one-command line and for
-   the gate self-audit which scaffolds from the pushed repo): e.g. `<your-org>/hedera-committee`.
-2. **Funded Hedera testnet account** (ECDSA private key + account id) in a local `.env` — needed in
-   Phase 2 for the testnet deploy/demo transactions and the Hashscan evidence link. Never committed,
-   never logged.
+1. ~~**GitHub owner/repo** for the template~~ - answered: `<GITHUB_OWNER>/hedera-committee`, public.
+2. ~~**Funded Hedera testnet account**~~ - answered: throwaway key in gitignored `packages/hardhat/.env`
+   (deployer) and root `.env` (same key as HCS operator), funded via the Portal faucet; account
+   `0.0.10806998` / EVM `0x6b93D069f3071aceC504339647fcB701949A43FB`.
+
+---
+
+## 9. Native value units - Step 0 probe (measured 2026-10-01)
+
+Mandated before any contract work: deploy a probe, send exactly 1 HBAR with ethers, record what the
+contract sees, and check the payout direction. Probe: `ValueUnitProbe.sol` + `scripts/probeValueUnits.ts`
+(deleted after the run, kept in git history).
+
+**Setup** - deployer `0.0.10806998` (EVM `0x6b93D069f3071aceC504339647fcB701949A43FB`, faucet-funded):
+
+| Evidence (Hedera testnet) | Value |
+| --- | --- |
+| Probe contract | [`0x2060C294d15672c7870E1162346Ba24d1d435DbA`](https://hashscan.io/testnet/contract/0x2060C294d15672c7870E1162346Ba24d1d435DbA) |
+| Deploy tx | `0x58c7b4c9a3765482eaa2986bf82310509338ade9dc03d82c86c31251c2efadb4` |
+| Inbound 1 HBAR tx | `0xb484d34e50841def76d1f1bc506fffdc43b380614b183d573cac94e12404bfbc` |
+| Payout tx | `0xa4f6a65376425fe57009bc87ba7e8247935d0d8e0c73b73095f3a5608ae80dca` |
+
+### 9.1 Measurements
+
+| Step | `value` sent (ethers) | Contract saw | Mirror-node delta | RPC `eth_getBalance` |
+| --- | --- | --- | --- | --- |
+| Fund check (10 HBAR) | - | - | `1_000_000_000` tinybars | `1e19` = tinybars x 1e10 |
+| Testnet: send 1 HBAR | `1e18` | **`1e8`** | `-105_358_960` (1e8 value + 5_358_960 gas) | `8_799_971_200_000_000_000` = mirror x 1e10 |
+| Testnet: contract pays out | contract held `1e8`, sent `1e7` | `lastPayoutValue = 1e7` | receiver `+5_788_560` net; gross `+1e7` (gas 4_211_440) | - |
+| **Local Hardhat fork: send 1 HBAR** | `1e18` | **`1e18`** (ratio 1) | n/a | n/a |
+
+### 9.2 Conclusions (this differs from the original PLAN 4.1 assumption)
+
+1. **Inside the EVM on Hedera, native value is tinybars: 1 HBAR = 1e8.** `msg.value`,
+   `address(this).balance` and `call{value:}` are tinybars, not wei.
+2. **The hashio RPC boundary is 18-decimal in both directions**: outbound `value` is divided by
+   `1e10` before execution (`1e18` sent -> `1e8` applied), and `eth_getBalance`/wallet views are
+   multiplied by `1e10` (`mirror_tinybars * 1e10`).
+3. **The local Hardhat node has no relay**, so it is standard wei: `1e18` sent -> `1e18` seen.
+   Local and Hedera contract units differ by exactly `1e10`.
+4. Identity that holds in both environments: `unitsPerHbar * relayScale = 1e18`
+   (Hedera `1e8 * 1e10`, local `1e18 * 1`).
+5. Measured on **testnet**; mainnet uses the same hashio relay (not separately measured).
+
+### 9.3 Consequences for the build
+
+- The contract works in chain-native units and stores an immutable `unitsPerHbar`, set by the
+  deploy script (`1e8` on Hedera, `1e18` on local) - single source of truth, read by the frontend.
+- Anything that **sends** value (frontend quote, demo scripts) sends
+  `nativeAmount * relayScale` with `relayScale = 1e18 / unitsPerHbar` (`1e10` on Hedera, `1`
+  locally) - one shared helper, used by contract tests, mock path and demo scripts.
+- `MockScheduleService` and all unit tests use the same `unitsPerHbar` they are deployed with.
+
