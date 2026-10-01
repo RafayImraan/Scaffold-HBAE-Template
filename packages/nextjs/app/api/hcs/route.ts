@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AccountId, Client, PrivateKey, TopicId, TopicMessageSubmitTransaction } from "@hiero-ledger/sdk";
 import { type Abi, createPublicClient, decodeEventLog, http } from "viem";
+import { committeeAbi } from "~~/contracts/committeeAbi";
 import deployedContracts from "~~/contracts/deployedContracts";
 import scaffoldConfig from "~~/scaffold.config";
 import { loadRootEnv } from "~~/utils/loadRootEnv";
@@ -17,13 +18,11 @@ const MAX_RECORD_BYTES = 900;
 
 type Deployment = { address: `0x${string}`; abi: Abi };
 
-function getDeployments(chainId: number): { factory: Deployment; committee: Deployment } | null {
+function getFactory(chainId: number): Deployment | null {
   const byChain = deployedContracts as unknown as Record<string, Record<string, Deployment>>;
-  const deployments = byChain[String(chainId)];
-  const factory = deployments?.CommitteeFactory;
-  const committee = deployments?.Committee;
-  if (!factory?.address || !committee?.address) return null;
-  return { factory, committee };
+  const factory = byChain[String(chainId)]?.CommitteeFactory;
+  if (!factory?.address) return null;
+  return factory;
 }
 
 function bigintSafe(value: unknown): unknown {
@@ -109,8 +108,8 @@ export async function POST(request: NextRequest) {
   }
 
   const chainId: number = scaffoldConfig.targetNetworks[0].id;
-  const deployments = getDeployments(chainId);
-  if (!deployments) {
+  const factory = getFactory(chainId);
+  if (!factory) {
     return NextResponse.json({ error: "no deployment recorded for this network" }, { status: 503 });
   }
 
@@ -133,8 +132,8 @@ export async function POST(request: NextRequest) {
   let committees: readonly `0x${string}`[];
   try {
     committees = (await client.readContract({
-      address: deployments.factory.address,
-      abi: deployments.factory.abi,
+      address: factory.address,
+      abi: factory.abi,
       functionName: "getCommittees",
     })) as readonly `0x${string}`[];
   } catch {
@@ -142,15 +141,15 @@ export async function POST(request: NextRequest) {
   }
 
   // topic0 allow-list (our ABIs) + sender address allow-list (registry members only)
-  const allowedAddresses = new Set([deployments.factory.address, ...committees].map(address => address.toLowerCase()));
-  const abi = [...deployments.committee.abi, ...deployments.factory.abi];
+  const allowedAddresses = new Set([factory.address, ...committees].map(address => address.toLowerCase()));
+  const abi = [...committeeAbi, ...factory.abi] as Abi;
   const events: Array<{ type: string; contract: string; logIndex: number; args: unknown }> = [];
   for (const log of receipt.logs) {
     if (!allowedAddresses.has(log.address.toLowerCase())) continue;
     try {
       const decoded = decodeEventLog({ abi, data: log.data, topics: log.topics });
       events.push({
-        type: decoded.eventName,
+        type: decoded.eventName ?? "UnknownEvent",
         contract: log.address,
         logIndex: log.logIndex,
         args: bigintSafe(decoded.args),

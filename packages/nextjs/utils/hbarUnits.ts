@@ -25,3 +25,12 @@ export function nativeToHbar(nativeAmount: bigint, unitsPerHbar: bigint): bigint
 export function hbarToNative(hbar: bigint, unitsPerHbar: bigint): bigint {
   return hbar * unitsPerHbar;
 }
+
+/**
+ * Contract-unit amount as 18-decimal display wei (what wallets and `formatEther`
+ * show): native x relayScale. Inverse of the tx `value` path, so
+ * formatEther(nativeToDisplayWei(x)) is exactly what the user should send.
+ */
+export function nativeToDisplayWei(nativeAmount: bigint, unitsPerHbar: bigint): bigint {
+  return nativeAmount * relayScaleFromUnitsPerHbar(unitsPerHbar);
+}

@@ -2,6 +2,7 @@
   "name": "@sh/hardhat",
   "version": "0.0.1",
   "scripts": {
+    "abi:export": "hardhat run scripts/exportCommitteeAbi.ts",
     "account": "hardhat run scripts/listAccount.ts",
     "account:generate": "hardhat run scripts/generateAccount.ts",
     "account:import": "hardhat run scripts/importAccount.ts",

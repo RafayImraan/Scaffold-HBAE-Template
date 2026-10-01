@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "format": "npm run format -w @sh/nextjs -- && npm run format -w @sh/hardhat --",
+    "hardhat:abi:export": "npm run abi:export -w @sh/hardhat --",
     "hardhat:account": "npm run account -w @sh/hardhat --",
     "hardhat:account:generate": "npm run account:generate -w @sh/hardhat --",
     "hardhat:account:import": "npm run account:import -w @sh/hardhat --",

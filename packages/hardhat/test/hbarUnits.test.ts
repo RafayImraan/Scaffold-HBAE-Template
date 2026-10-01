@@ -2,6 +2,7 @@ import { expect } from "chai";
 
 import {
   hbarToNative,
+  nativeToDisplayWei,
   nativeToHbar,
   relayScaleFromUnitsPerHbar,
   txValueFromNative,
@@ -32,6 +33,16 @@ describe("hbarUnits (the shared conversion helper used by the frontend)", functi
     expect(nativeToHbar(200n * TINYBARS_PER_HBAR + 99_999_999n, TINYBARS_PER_HBAR)).to.equal(200n);
     expect(hbarToNative(200n, TINYBARS_PER_HBAR)).to.equal(200n * TINYBARS_PER_HBAR);
     expect(hbarToNative(200n, WEI_PER_HBAR)).to.equal(200n * WEI_PER_HBAR);
+  });
+
+  it("display wei follows the tx value scale in both regimes", function () {
+    expect(nativeToDisplayWei(200n * TINYBARS_PER_HBAR, TINYBARS_PER_HBAR)).to.equal(200_000_000_000_000_000_000n);
+    expect(nativeToDisplayWei(200n * WEI_PER_HBAR, WEI_PER_HBAR)).to.equal(200n * WEI_PER_HBAR);
+    // the wallet-visible amount and the tx value field are the same number:
+    // the relay converts the value back to native units before execution
+    const required = 123_456_789n;
+    expect(txValueFromNative(required, TINYBARS_PER_HBAR)).to.equal(nativeToDisplayWei(required, TINYBARS_PER_HBAR));
+    expect(txValueFromNative(required, WEI_PER_HBAR)).to.equal(nativeToDisplayWei(required, WEI_PER_HBAR));
   });
 
   it("rejects a non-positive unitsPerHbar", function () {
