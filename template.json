@@ -27,6 +27,10 @@
       {
         "key": "HCS_TOPIC_ID",
         "description": "HCS topic ID for committee audit records, printed by npm run hardhat:hcs:topic --"
+      },
+      {
+        "key": "HCS_RPC_URL",
+        "description": "Hedera JSON-RPC endpoint the server uses to verify tx receipts (default: Hedera testnet)"
       }
     ],
     "instructions": [

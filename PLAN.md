@@ -79,14 +79,15 @@ hedera-committee/
 ├── template.json                 # manifest (zod-validated by the CLI, deleted after scaffold)
 ├── README.md                     # 30-point deliverable
 ├── AGENTS.md                     # 30-point deliverable
-├── LICENSE                       # MIT
-├── RESEARCH.md                   # Phase 0 evidence (kept: shows verification trail)
-├── PLAN.md                       # this file
+├── LICENSE                       # MIT (renamed from scaffold-hbar's LICENCE)
+├── RESEARCH.md                   # Phase 0 evidence (kept: shows verification trail; moves to docs/ in Phase 3)
+├── PLAN.md                       # this file (moves to docs/ in Phase 3)
+├── HANDOFF.md                    # done / next / decisions / commands for resuming sessions
 ├── .env.example                  # root: HCS + operator vars (documented table in README)
-├── .gitignore                    # .env, .env.*, !.env.example, node_modules, .yarn/*
+├── .gitignore                    # .env, .env.*, !.env.example, node_modules
+├── .npmrc                        # legacy-peer-deps=true (matches the CLI install flags)
 ├── .github/workflows/ci.yml
 ├── scripts/verify-gate.sh        # Phase 4 self-audit
-├── .husky/pre-commit  .lintstagedrc.js  .yarnrc.yml  .yarn/  (as in scaffold-hbar)
 └── packages/
     ├── hardhat/
     │   ├── contracts/
@@ -183,7 +184,7 @@ External functions:
 | `join()` | `Open`, not a member, slots free. On the last join → `_startRound(1)` (sets `round=1`, `roundEndsAt=now+roundDuration`, `_schedulePayout()`), status `Active`. |
 | `contribute() payable` | `Active`, member, first time this round, `now < roundEndsAt`; `required = quoteContribution()` (adapter reverts on stale/zero/incomplete); `msg.value >= required`; effects first (`pot += required`, mark contributed), then **refund `msg.value - required`**. Non-reentrant. |
 | `quoteContribution() view` | `(requiredWei, priceE18, updatedAt)` for the UI. |
-| `finalizeRound()` | `Active`, `now >= roundEndsAt`. CEI: receiver = `members[round-1]`, `amount = pot`, `pot = 0`, delete pending schedule (`deleteSchedule`, best-effort), then transfer. If `round == maxMembers` → `Completed`, emit `CommitteeCompleted`; else `round++`, `roundEndsAt += roundDuration`, clear contributions, `_schedulePayout()`. Permissionless ⇒ **HSS auto-execution and manual fallback use the same entry point**. Non-reentrant. |
+| `finalizeRound()` | `Active`, `now >= roundEndsAt`. CEI: receiver = `members[round-1]`, `amount = min(pot, address(this).balance)` (verified unit), `pot = 0`, delete pending schedule (`deleteSchedule`, best-effort), then transfer. If `round == maxMembers` → `Completed`, emit `CommitteeCompleted`; else `round++`, `roundEndsAt = block.timestamp + roundDuration` (never `+=` - a late/manual call must not shorten the next round), clear contributions, `_schedulePayout()`. Permissionless ⇒ **HSS auto-execution and manual fallback use the same entry point**. Non-reentrant. |
 | `topUpReserve() payable` | anyone; keeps HSS fee float alive. |
 | `sweepReserve()` | `creator` only, only when `Completed` (pot is 0 by then). |
 
@@ -243,19 +244,26 @@ Nothing is ever placed inside an **Atomic Batch** transaction (deprecated Sept 2
 
 ## 6. HCS flow (audit log only)
 
-- `POST /api/hcs` — body `{ type, committee, round?, txHash?, amount?, note? }` validated against
-  an allow-list schema + ≤ 900-byte canonical JSON. Server loads `HEDERA_OPERATOR_ID` /
-  `HEDERA_OPERATOR_KEY` / `HCS_TOPIC_ID` from env (server-only), submits
-  `TopicMessageSubmitTransaction`, returns `{ sequenceNumber, consensusTimestamp }`.
-  Status codes: `400` invalid, `405` wrong method, `502` SDK failure, `503` not configured.
-  A tiny in-memory fixed-window rate limit (60 req/min/IP) guards the public endpoint.
-  **The key is never sent to the client and never logged.**
+- `POST /api/hcs` — body is **only `{ txHash }`** (0x-prefixed, 66 chars). The server:
+  1. fetches the transaction receipt from the Hedera JSON-RPC endpoint (env `HCS_RPC_URL`,
+     default `https://testnet.hashio.io/api`),
+  2. checks `status === success` and parses the contract logs itself (event signature topic0
+     allow-list + committee address), rebuilding the record from **verified chain data**,
+  3. submits the canonical JSON (≤ 900 bytes) via `TopicMessageSubmitTransaction`,
+  4. returns `{ sequenceNumber, consensusTimestamp, events[] }`.
+  Client-supplied fields other than `txHash` are rejected (400) - nothing the client says about the
+  transaction is trusted. Status codes: `400` invalid, `405` wrong method, `409` no verified events,
+  `502` RPC/SDK failure, `503` not configured. **No rate limiter** (out of scope by decision).
+  The operator key lives only in root `.env`, is read server-side, never sent to the client, never
+  logged.
 - `GET /api/hcs?limit=25` — proxies the mirror node `GET /api/v1/topics/{id}/messages`, decodes
   base64 → JSON, returns `{ configured, topicId, messages[] }`; `200` even when unconfigured
   (`configured:false`, empty list) so the route is always healthy.
 - `GET /api/health` — `{ ok, chainId, factory, hcsTopicId }`, used by CI/gate smoke checks.
+- Env (root `.env`, gitignored, mirrored into `.env.example` by `template.json`):
+  `HCS_OPERATOR_ACCOUNT_ID`, `HCS_OPERATOR_PRIVATE_KEY`, `HCS_TOPIC_ID`, `HCS_RPC_URL` (optional).
 - Topic is created by `npm run hardhat:hcs:topic --` with **submitKey = operator key**, so only the
-  server can append. Client POSTs a record after each successful tx (fire-and-forget + toast on
+  server can append. Client POSTs `{ txHash }` after each successful tx (fire-and-forget + toast on
   failure; the chain stays the source of truth).
 
 ---
@@ -280,7 +288,7 @@ Blockexplorer pages removed (dead weight); all explorer links point at Hashscan.
 | Script | What it does |
 | --- | --- |
 | `npm run hardhat:deploy -- --network hederaTestnet` | `00` Chainlink adapter → `02` factory (`scheduleService = 0x16b`); local path instead deploys `MockPriceOracle` + `MockScheduleService`; `generateTsAbis` writes `deployedContracts.ts` |
-| `npm run hardhat:hcs:topic --` | creates the HCS topic (submitKey = operator), prints `0.0.x`, writes `HCS_TOPIC_ID` into `packages/nextjs/.env.local` (gitignored) |
+| `npm run hardhat:hcs:topic --` | creates the HCS topic (submitKey = operator), prints `0.0.x`, writes `HCS_TOPIC_ID` into the root `.env` (gitignored) |
 | `npm run hardhat:demo:testnet --` | creates a committee (2 members, short round), creates+funds a second ECDSA testnet account in-memory (never printed), both `join`, both `contribute` (quote → send exact), submits HCS records, then **prints Hashscan links**: contract, factory, create/join/contribute txs, topic |
 | `npm run hardhat:demo:payout --` | waits for `roundEndsAt`, verifies whether HSS executed `finalizeRound` (falls back to calling it manually), prints the payout tx link |
 
@@ -296,15 +304,22 @@ Hardhat (mock oracle + mock HSS, no network needed):
 1. `CommitteeFactory.test.ts` — config validation (each bound), min reserve, event, registry.
 2. `Committee.fullCycle.test.ts` — 3 members × 3 rounds: join → start → contribute → HSS
    scheduled → `executeDueSchedule()` → payouts in **join order** → `Completed` → `sweepReserve`.
+   **Runs the whole cycle twice: `unitsPerHbar = 1e8` (Hedera/tinybars) and `1e18` (local/wei)**,
+   driven by one parameterised helper - every amount assertion uses the active unit.
 3. `Committee.oracle.test.ts` — stale price, zero price, incomplete round, decimals normalisation
-   (8→18), quote math incl. ceil rounding.
+   (8→18), quote math incl. ceil rounding (both units).
 4. `Committee.contribution.test.ts` — non-member, double contribute, contribute while `Open`,
    after `roundEndsAt`, underpay, overpay refund (balance deltas), zero value.
 5. `Committee.payout.test.ts` — finalize before end, manual finalize deletes pending schedule,
-   capacity=false → `PayoutScheduleFailed` without revert, missed-contribution round (pot = 2/3).
+   capacity=false → `PayoutScheduleFailed` without revert, missed-contribution round (pot = 2/3),
+   `amount = min(pot, address(this).balance)`.
 6. `Committee.reentrancy.test.ts` — `MaliciousReceiver` re-enters `finalizeRound`/`contribute`
    during payout → guard reverts, state intact.
 7. `oracle/ChainlinkAdapter.test.ts` — adapter checks against a scripted `MockAggregatorV3`.
+8. `hbarUnits.test.ts` — the shared conversion helper (`packages/nextjs/utils/hbarUnits.ts`,
+   imported by the frontend): `txValueFromNative(required, 1e8) == required * 1e10`,
+   `txValueFromNative(required, 1e18) == required`, identity `unitsPerHbar * relayScale = 1e18`,
+   `nativeToHbar` display rounding.
 
 Frontend: `npm run next:smoke --` — builds, boots `next start`, asserts `200` for
 `/`, `/debug`, `/committee/0x0000000000000000000000000000000000000001`, `/api/health`,
@@ -330,10 +345,14 @@ Single `ubuntu-latest` / Node 20 job:
 (the ROSCA problem + HBAR volatility) · how the oracle makes it possible (load-bearing, with the
 20 USD → HBAR worked example) · prerequisites · **one-command scaffold** · env var table ·
 local run (3 terminals) · testnet deploy (faucet → account → deploy → topic → demo → links) ·
+**Units section: tinybars (1e8) inside the Hedera EVM vs wei (1e18) locally, relayScale for the
+`value` field, with the Step-0 probe evidence + tx link** ·
 how the oracle works (feed addresses, 8 vs 18 decimals, staleness window, local mock fallback) ·
 architecture mermaid · how HSS is used and why (+ manual fallback, reserve) · how HCS is used and
-why (audit log not a database, submit key, server-only key) · security notes & limitations ·
-troubleshooting table · project structure · **Hashscan links section** · MIT.
+why (audit log not a database, submit key, server-only key) · security notes · **Limitations
+(first item: a member who already received the pot can stop contributing - no collateral; security
+deposit is future work)** · troubleshooting table · project structure · **Hashscan links
+section** · MIT.
 
 **AGENTS.md** — repo map · command table (root scripts only) · conventions (naming, `~~` alias,
 scaffold hooks names, `@sh/` scope, events-for-HCS rule) · do/don't (no Atomic Batch, no client-side
@@ -368,5 +387,5 @@ no Foundry package, no Atomic Batch, no blockexplorer pages.
 | Testnet HBAR / funded key missing | block on user input now (see questions) |
 | HSS throttle at demo time | `hasScheduleCapacity` probe + manual fallback; demo prints both paths |
 | Chainlink testnet reporter gaps | `maxPriceAge` is a creation parameter; demo uses a loose bound, README explains |
-| npm path diverges from npm run path -- | CI uses yarn (template default); gate script runs the scaffold once with npm too |
+| Gate self-audit must re-run everything | `scripts/verify-gate.sh` re-runs install/lint/typecheck/build/tests + fresh scaffold in a temp dir (npm only) |
 | Time | §13 cuts; lowest-priority item is `demo:payout` |
