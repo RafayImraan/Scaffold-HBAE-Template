@@ -81,6 +81,10 @@ const config: HardhatUserConfig = {
     outDir: "typechain-types",
     target: "ethers-v6",
   },
+  // Tests run on the Hedera-forked network; remote-forked suites need more than mocha's 2s default.
+  mocha: {
+    timeout: 120_000,
+  },
 };
 
 // Extend the deploy task to also generate TypeScript ABIs after deployment.
