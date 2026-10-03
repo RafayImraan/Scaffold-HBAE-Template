@@ -8,7 +8,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { AccountId, Client, PrivateKey, TopicCreateTransaction } from "@hiero-ledger/sdk";
+import { AccountId, Client, PrivateKey, Timestamp, TopicCreateTransaction, TransactionId } from "@hiero-ledger/sdk";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
 const envPath = path.join(rootDir, ".env");
@@ -37,10 +37,25 @@ const client = isMainnet ? Client.forMainnet() : Client.forTestnet();
 
 try {
   client.setOperator(AccountId.fromString(operatorAccountId), key);
+  // Anchor validStart to the latest network consensus time instead of the
+  // local clock: a skewed server clock must never expire the transaction.
+  const rpcUrl =
+    process.env.HCS_RPC_URL ||
+    (isMainnet ? "https://mainnet.hashio.io/api" : "https://testnet.hashio.io/api");
+  const blockResponse = await fetch(rpcUrl, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getBlockByNumber", params: ["latest", false] }),
+  });
+  const block = (await blockResponse.json()).result;
+  const validStart = Timestamp.fromDate(new Date(Number(BigInt(block.timestamp)) * 1000));
   const response = await new TopicCreateTransaction()
     .setAdminKey(key.publicKey)
     .setSubmitKey(key.publicKey)
     .setTopicMemo("hedera-committee audit log")
+    .setTransactionId(
+      TransactionId.withValidStart(AccountId.fromString(operatorAccountId), validStart),
+    )
     .setTransactionValidDuration(180)
     .execute(client);
   const receipt = await response.getReceipt(client);

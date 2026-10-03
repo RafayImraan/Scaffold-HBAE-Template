@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AccountId, Client, PrivateKey, TopicId, TopicMessageSubmitTransaction } from "@hiero-ledger/sdk";
+import {
+  AccountId,
+  Client,
+  PrivateKey,
+  Timestamp,
+  TopicId,
+  TopicMessageSubmitTransaction,
+  TransactionId,
+} from "@hiero-ledger/sdk";
 import { type Abi, createPublicClient, decodeEventLog, http } from "viem";
 import { committeeAbi } from "~~/contracts/committeeAbi";
 import deployedContracts from "~~/contracts/deployedContracts";
@@ -169,32 +177,23 @@ export async function POST(request: NextRequest) {
   }
 
   let sequenceNumber: string | null = null;
-  let consensusTimestamp: string | null = null;
   try {
     const privateKey = PrivateKey.fromStringECDSA(operatorKey.replace(/^0x/, ""));
     const sdkClient = chainId === 295 ? Client.forMainnet() : Client.forTestnet();
     try {
       sdkClient.setOperator(AccountId.fromString(operatorAccountId), privateKey);
+      // Anchor validStart to the latest network consensus time instead of the
+      // local clock: a skewed server clock must never expire the submit.
+      const latestBlock = await client.getBlock({ blockTag: "latest" });
+      const validStart = Timestamp.fromDate(new Date(Number(latestBlock.timestamp) * 1000));
       const submit = await new TopicMessageSubmitTransaction()
         .setTopicId(TopicId.fromString(topicId))
         .setMessage(canonical)
+        .setTransactionId(TransactionId.withValidStart(AccountId.fromString(operatorAccountId), validStart))
         .setTransactionValidDuration(180)
         .execute(sdkClient);
-      const submitReceipt = (await submit.getReceipt(sdkClient)) as unknown as {
-        sequenceNumber: bigint;
-        consensusTimestamp?: unknown;
-      };
-      sequenceNumber = submitReceipt.sequenceNumber.toString();
-      const timestamp = submitReceipt.consensusTimestamp;
-      if (typeof timestamp === "bigint") {
-        consensusTimestamp = timestamp.toString();
-      } else if (timestamp && typeof timestamp === "object" && "seconds" in timestamp) {
-        const seconds = (timestamp as { seconds: unknown }).seconds;
-        const nanos = (timestamp as { nanos?: unknown }).nanos ?? 0;
-        consensusTimestamp = `${String(seconds)}.${String(nanos).padStart(9, "0")}`;
-      } else if (timestamp != null) {
-        consensusTimestamp = String(timestamp);
-      }
+      const submitReceipt = await submit.getReceipt(sdkClient);
+      sequenceNumber = submitReceipt.topicSequenceNumber?.toString() ?? null;
     } finally {
       sdkClient.close();
     }
@@ -203,5 +202,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "HCS submit failed" }, { status: 502 });
   }
 
-  return NextResponse.json({ sequenceNumber, consensusTimestamp, events });
+  return NextResponse.json({ sequenceNumber, events });
 }

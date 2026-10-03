@@ -43,7 +43,7 @@ async function postHcs(txHash: string): Promise<string> {
     const response = await fetch(`${APP_BASE_URL}/api/hcs`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ chainId: CHAIN_ID, txHash }),
+      body: JSON.stringify({ txHash }),
     });
     const body = (await response.json()) as { sequenceNumber?: string; error?: string };
     if (!response.ok) return `FAILED ${body.error ?? response.status}`;
