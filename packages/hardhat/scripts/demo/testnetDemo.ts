@@ -23,8 +23,8 @@ const HSS_GRACE_SECONDS = 180; // poll this long past roundEndsAt for HSS
 const POLL_SECONDS = 15;
 const MEMBER2_GAS_BUFFER = ethers.parseEther("0.5");
 const GAS_SLACK = ethers.parseEther("1"); // create/join/finalize gas + buffer
-const CONTRIBUTE_GAS_LIMIT = 300_000;
-const JOIN_GAS_LIMIT = 300_000;
+const CONTRIBUTE_GAS_LIMIT = 500_000;
+const JOIN_GAS_LIMIT = 2_500_000;
 const CREATE_GAS_LIMIT = 2_000_000;
 const HASHSCAN = "https://hashscan.io/testnet";
 const APP_BASE_URL = process.env.APP_BASE_URL ?? "http://localhost:3000";
@@ -182,8 +182,16 @@ async function main(): Promise<void> {
   log(`round 1 ends at ${roundEndsAt} (≈ ${new Date(roundEndsAt * 1000).toISOString()})`);
 
   // --- contribute at the quoted amount (exact → refund must be 0) ---
+  const contributionValue = valueFor(contractQuote);
+  const contributionData = committee.interface.encodeFunctionData("contribute");
   const receipt1 = await (
-    await committee.contribute({ value: valueFor(contractQuote), gasLimit: CONTRIBUTE_GAS_LIMIT, gasPrice })
+    await deployer.sendTransaction({
+      to: committeeAddress,
+      value: contributionValue,
+      gasLimit: CONTRIBUTE_GAS_LIMIT,
+      gasPrice,
+      data: contributionData,
+    })
   ).wait();
   if (!receipt1) throw new Error("contribute1 receipt missing");
   const c1 = receipt1.logs
@@ -202,10 +210,16 @@ async function main(): Promise<void> {
   log(`HCS contribute1: ${await postHcs(receipt1.hash)}`);
 
   const [required2] = await committee.quoteContribution();
+  const contributionValue2 = valueFor(required2);
+  const contributionData2 = committee.interface.encodeFunctionData("contribute");
   const receipt2 = await (
-    await committee
-      .connect(member2)
-      .contribute({ value: valueFor(required2), gasLimit: CONTRIBUTE_GAS_LIMIT, gasPrice })
+    await member2.sendTransaction({
+      to: committeeAddress,
+      value: contributionValue2,
+      gasLimit: CONTRIBUTE_GAS_LIMIT,
+      gasPrice,
+      data: contributionData2,
+    })
   ).wait();
   if (!receipt2) throw new Error("contribute2 receipt missing");
   const c2 = receipt2.logs
