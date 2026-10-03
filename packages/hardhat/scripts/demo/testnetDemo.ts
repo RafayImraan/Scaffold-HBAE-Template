@@ -21,8 +21,11 @@ const ROUND_DURATION = 360; // seconds, within [300, 30 days]
 const MAX_PRICE_AGE = 86_400; // 1 day - loose so reporter gaps don't flake
 const HSS_GRACE_SECONDS = 180; // poll this long past roundEndsAt for HSS
 const POLL_SECONDS = 15;
-const MEMBER2_GAS_BUFFER = ethers.parseEther("1");
-const GAS_SLACK = ethers.parseEther("3"); // create/join/finalize gas + buffer
+const MEMBER2_GAS_BUFFER = ethers.parseEther("0.5");
+const GAS_SLACK = ethers.parseEther("1"); // create/join/finalize gas + buffer
+const CONTRIBUTE_GAS_LIMIT = 300_000;
+const JOIN_GAS_LIMIT = 300_000;
+const CREATE_GAS_LIMIT = 2_000_000;
 const HASHSCAN = "https://hashscan.io/testnet";
 const APP_BASE_URL = process.env.APP_BASE_URL ?? "http://localhost:3000";
 
@@ -74,6 +77,11 @@ async function main(): Promise<void> {
   log(`deployer (creator, member1): ${deployerAddress} ${HASHSCAN}/account/0.0.10806998`);
   log(`factory: ${factoryAddress} ${HASHSCAN}/contract/${factoryAddress}`);
 
+  // Fetch gas price once to avoid estimation spikes
+  const feeData = await ethers.provider.getFeeData();
+  const gasPrice = feeData.gasPrice ?? ethers.parseUnits("1000", "gwei");
+  log(`gasPrice: ${gasPrice} wei`);
+
   // Independent quote formula (must match the contract's own quote below).
   const priceData = await oracle.latestPrice(await factory.PAIR_KEY());
   const numerator = USD_PER_ROUND * 10n ** 12n * 10n ** 8n;
@@ -94,6 +102,8 @@ async function main(): Promise<void> {
   // --- create ---
   const createTx = await factory.createCommittee(USD_PER_ROUND, MAX_MEMBERS, ROUND_DURATION, MAX_PRICE_AGE, {
     value: valueFor(minReserve),
+    gasLimit: CREATE_GAS_LIMIT,
+    gasPrice,
   });
   const createReceipt = await createTx.wait();
   if (!createReceipt) throw new Error("create receipt missing");
@@ -127,16 +137,17 @@ async function main(): Promise<void> {
     await deployer.sendTransaction({
       to: member2Address,
       value: valueFor(requiredIndependent) + MEMBER2_GAS_BUFFER,
+      gasPrice,
     })
   ).wait();
 
   // --- join (member1 first, so round 1 pays member1) ---
-  const join1Receipt = await (await committee.join()).wait();
+  const join1Receipt = await (await committee.join({ gasLimit: JOIN_GAS_LIMIT, gasPrice })).wait();
   if (!join1Receipt) throw new Error("join1 receipt missing");
   log(`join1 tx: ${join1Receipt.hash} ${txLink(join1Receipt.hash)}`);
   log(`HCS join1: ${await postHcs(join1Receipt.hash)}`);
 
-  const join2Receipt = await (await committee.connect(member2).join()).wait();
+  const join2Receipt = await (await committee.connect(member2).join({ gasLimit: JOIN_GAS_LIMIT, gasPrice })).wait();
   if (!join2Receipt) throw new Error("join2 receipt missing");
   log(`join2 tx: ${join2Receipt.hash} ${txLink(join2Receipt.hash)}`);
   log(`HCS join2: ${await postHcs(join2Receipt.hash)}`);
@@ -171,20 +182,24 @@ async function main(): Promise<void> {
   log(`round 1 ends at ${roundEndsAt} (≈ ${new Date(roundEndsAt * 1000).toISOString()})`);
 
   // --- contribute at the quoted amount (exact → refund must be 0) ---
-  const receipt1 = await (await committee.contribute({ value: valueFor(contractQuote) })).wait();
+  const receipt1 = await (await committee.contribute({ value: valueFor(contractQuote), gasLimit: CONTRIBUTE_GAS_LIMIT, gasPrice })).wait();
   if (!receipt1) throw new Error("contribute1 receipt missing");
-  const c1 = committee.interface.parseLog(receipt1.logs[receipt1.logs.length - 1] as Log);
-  if (!c1 || c1.name !== "ContributionReceived") throw new Error("expected ContributionReceived");
+  const c1 = receipt1.logs
+    .map(l => { try { return committee.interface.parseLog(l as Log); } catch { return null; } })
+    .find(e => e?.name === "ContributionReceived");
+  if (!c1) throw new Error("expected ContributionReceived");
   log(
     `contribute1 tx: ${receipt1.hash} ${txLink(receipt1.hash)} required=${c1.args.required} refund=${c1.args.refund}`,
   );
   log(`HCS contribute1: ${await postHcs(receipt1.hash)}`);
 
   const [required2] = await committee.quoteContribution();
-  const receipt2 = await (await committee.connect(member2).contribute({ value: valueFor(required2) })).wait();
+  const receipt2 = await (await committee.connect(member2).contribute({ value: valueFor(required2), gasLimit: CONTRIBUTE_GAS_LIMIT, gasPrice })).wait();
   if (!receipt2) throw new Error("contribute2 receipt missing");
-  const c2 = committee.interface.parseLog(receipt2.logs[receipt2.logs.length - 1] as Log);
-  if (!c2 || c2.name !== "ContributionReceived") throw new Error("expected ContributionReceived");
+  const c2 = receipt2.logs
+    .map(l => { try { return committee.interface.parseLog(l as Log); } catch { return null; } })
+    .find(e => e?.name === "ContributionReceived");
+  if (!c2) throw new Error("expected ContributionReceived");
   log(
     `contribute2 tx: ${receipt2.hash} ${txLink(receipt2.hash)} required=${c2.args.required} refund=${c2.args.refund}`,
   );
@@ -231,7 +246,7 @@ async function main(): Promise<void> {
     log(`HSS executed finalizeRound automatically (tx ${finalizeTxHash})`);
   } else {
     log(`HSS did not execute finalizeRound within ${HSS_GRACE_SECONDS}s of round end - calling manually`);
-    const manualReceipt = await (await committee.finalizeRound()).wait();
+    const manualReceipt = await (await committee.finalizeRound({ gasPrice })).wait();
     if (!manualReceipt) throw new Error("manual finalize receipt missing");
     finalizedPath = "manual";
     finalizeTxHash = manualReceipt.hash;
@@ -272,6 +287,7 @@ async function main(): Promise<void> {
     const sweep = await member2.sendTransaction({
       to: deployerAddress,
       value: member2Left - sweepGasBuffer,
+      gasPrice,
     });
     await sweep.wait();
     log(`member2 leftover returned: ${hbar(member2Left - sweepGasBuffer)} tx ${txLink(sweep.hash)}`);

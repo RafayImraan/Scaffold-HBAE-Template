@@ -173,7 +173,7 @@ const deployedContracts = {
       deployedOnBlock: 41219920,
     },
     CommitteeFactory: {
-      address: "0x9de9c4F3D1f52eA4278d6e8210F51C79eA88D9CF",
+      address: "0x56CCC11aaC8d028D0c7a0E9F7F954C797E9DaDC2",
       abi: [
         {
           inputs: [
@@ -186,6 +186,11 @@ const deployedContracts = {
               internalType: "address",
               name: "scheduleService_",
               type: "address",
+            },
+            {
+              internalType: "bool",
+              name: "hssEnabled_",
+              type: "bool",
             },
             {
               internalType: "uint256",
@@ -339,6 +344,19 @@ const deployedContracts = {
         },
         {
           inputs: [],
+          name: "hssEnabled",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
           name: "minReserve",
           outputs: [
             {
@@ -391,7 +409,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 41219927,
+      deployedOnBlock: 41323387,
     },
   },
 } as const;
