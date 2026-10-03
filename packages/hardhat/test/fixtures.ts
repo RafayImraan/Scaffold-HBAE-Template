@@ -25,9 +25,11 @@ export async function deployWorld(unitsPerHbar: bigint) {
 
   const oracle = await (await ethers.getContractFactory("MockPriceOracle")).deploy(PRICE_10_CENTS);
   const scheduleService = await (await ethers.getContractFactory("MockScheduleService")).deploy();
+  // Use hssEnabled=true in tests to exercise HSS scheduling with MockScheduleService
+  const hssEnabled = true;
   const factory = await (
     await ethers.getContractFactory("CommitteeFactory")
-  ).deploy(await oracle.getAddress(), await scheduleService.getAddress(), unitsPerHbar);
+  ).deploy(await oracle.getAddress(), await scheduleService.getAddress(), hssEnabled, unitsPerHbar);
 
   return { creator, alice, bob, carol, executor, oracle, scheduleService, factory, unitsPerHbar };
 }

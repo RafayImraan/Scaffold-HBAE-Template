@@ -76,6 +76,7 @@ contract Committee is ReentrancyGuard {
     IPriceOracle public immutable oracle;
     bytes32 public immutable pairKey;
     address public immutable scheduleService;
+    bool public immutable hssEnabled;
     uint256 public immutable unitsPerHbar;
     uint256 public immutable relayScale;
     uint256 public immutable usdAmountPerRound; // 1e-6 USD, e.g. 20_000_000 = $20.00
@@ -100,6 +101,7 @@ contract Committee is ReentrancyGuard {
         address oracle_,
         bytes32 pairKey_,
         address scheduleService_,
+        bool hssEnabled_,
         uint256 unitsPerHbar_,
         uint256 usdAmountPerRound_,
         uint8 maxMembers_,
@@ -112,6 +114,7 @@ contract Committee is ReentrancyGuard {
         oracle = IPriceOracle(oracle_);
         pairKey = pairKey_;
         scheduleService = scheduleService_;
+        hssEnabled = hssEnabled_;
         unitsPerHbar = unitsPerHbar_;
         relayScale = 1e18 / unitsPerHbar_;
         usdAmountPerRound = usdAmountPerRound_;
@@ -268,7 +271,7 @@ contract Committee is ReentrancyGuard {
     /// @dev Schedule this round's payout on HSS; emits PayoutScheduleFailed
     /// instead of reverting so a throttled second can never brick a round.
     function _schedulePayout() internal {
-        if (scheduleService.code.length == 0) {
+        if (!hssEnabled) {
             emit ScheduleSkipped();
             return;
         }

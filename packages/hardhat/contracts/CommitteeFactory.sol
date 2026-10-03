@@ -26,15 +26,17 @@ contract CommitteeFactory {
 
     address public immutable oracle;
     address public immutable scheduleService;
+    bool public immutable hssEnabled;
     uint256 public immutable unitsPerHbar;
 
     address[] private _committees;
 
-    constructor(address oracle_, address scheduleService_, uint256 unitsPerHbar_) {
+    constructor(address oracle_, address scheduleService_, bool hssEnabled_, uint256 unitsPerHbar_) {
         if (oracle_ == address(0)) revert ZeroAddress();
         if (unitsPerHbar_ != 1e8 && unitsPerHbar_ != 1e18) revert InvalidConfig("unitsPerHbar");
         oracle = oracle_;
         scheduleService = scheduleService_;
+        hssEnabled = hssEnabled_;
         unitsPerHbar = unitsPerHbar_;
     }
 
@@ -64,6 +66,7 @@ contract CommitteeFactory {
                 oracle,
                 PAIR_KEY,
                 scheduleService,
+                hssEnabled,
                 unitsPerHbar,
                 usdAmountPerRound,
                 maxMembers,

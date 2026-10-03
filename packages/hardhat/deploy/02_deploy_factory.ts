@@ -18,10 +18,11 @@ const deployFactory: DeployFunction = async function (hre: HardhatRuntimeEnviron
 
   const oracle = await get(isHedera ? "ChainlinkHbarUsdAdapter" : "MockPriceOracle");
   const scheduleService = isHedera ? HSS_SYSTEM_CONTRACT : (await get("MockScheduleService")).address;
+  const hssEnabled = isHedera;
 
   await deploy("CommitteeFactory", {
     from: deployer,
-    args: [oracle.address, scheduleService, unitsPerHbar],
+    args: [oracle.address, scheduleService, hssEnabled, unitsPerHbar],
     log: true,
     autoMine: true,
     gasLimit: "3000000",
@@ -29,6 +30,7 @@ const deployFactory: DeployFunction = async function (hre: HardhatRuntimeEnviron
   });
 
   console.log(`  unitsPerHbar = ${unitsPerHbar} (chainId ${chainId})`);
+  console.log(`  hssEnabled = ${hssEnabled}`);
 };
 
 deployFactory.tags = ["CommitteeFactory"];

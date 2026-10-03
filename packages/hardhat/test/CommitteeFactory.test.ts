@@ -81,9 +81,9 @@ describe("CommitteeFactory", function () {
     const scheduleService = await (await ethers.getContractFactory("MockScheduleService")).deploy();
 
     await expect(
-      factoryFactory.deploy(ethers.ZeroAddress, await scheduleService.getAddress(), TINYBARS_PER_HBAR),
+      factoryFactory.deploy(ethers.ZeroAddress, await scheduleService.getAddress(), true, TINYBARS_PER_HBAR),
     ).to.be.revertedWithCustomError(factoryFactory, "ZeroAddress");
-    await expect(factoryFactory.deploy(deployer.address, await scheduleService.getAddress(), 10n ** 17n))
+    await expect(factoryFactory.deploy(deployer.address, await scheduleService.getAddress(), true, 10n ** 17n))
       .to.be.revertedWithCustomError(factoryFactory, "InvalidConfig")
       .withArgs(ethers.encodeBytes32String("unitsPerHbar"));
   });

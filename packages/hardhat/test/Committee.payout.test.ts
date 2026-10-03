@@ -64,13 +64,13 @@ describe("Committee.payout", function () {
     await expect(committee.connect(carol).join()).to.emit(committee, "PayoutScheduleFailed").withArgs(-7n);
   });
 
-  it("skips scheduling entirely when no schedule service is deployed", async function () {
+  it("skips scheduling entirely when hssEnabled is false", async function () {
     const world = await deployWorld(WEI_PER_HBAR);
     const { alice, bob, carol } = world;
     const [deployer] = await ethers.getSigners();
     const bareFactory = await (
       await ethers.getContractFactory("CommitteeFactory")
-    ).deploy(await world.oracle.getAddress(), ethers.ZeroAddress, WEI_PER_HBAR);
+    ).deploy(await world.oracle.getAddress(), ethers.ZeroAddress, false, WEI_PER_HBAR);
 
     const { committee } = await createCommittee(world, { factory: bareFactory, creator: deployer });
     await committee.connect(alice).join();
