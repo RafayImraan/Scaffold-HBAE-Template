@@ -59,14 +59,13 @@ npm run next:dev --
 | CommitteeFactory (v2, hssEnabled) | https://hashscan.io/testnet/contract/0x56CCC11aaC8d028D0c7a0E9F7F954C797E9DaDC2 |
 | HCS topic | https://hashscan.io/testnet/topic/0.0.10809816 |
 
-Example committee lifecycle (most recent run):
+Example committee lifecycle (successful demo run):
 | Action | Hashscan |
 |--------|----------|
-| Create committee | https://hashscan.io/testnet/tx/0x42ef5718e402814399a09067b87a0c585812ab3f2c7433fb710e291d9c884514 |
-| Join (member1) | https://hashscan.io/testnet/tx/0xcc1030333774cc0c07246f5adce120293e4b2e0ef68922e210f5ca5fdacc564b |
-| Join (member2) — HSS scheduled | https://hashscan.io/testnet/tx/0x616ffa03a9758b2daf91376292f66e90772dab79ba2fb95cfb6f8afc9d53f0bd |
-| Contribute (member1) | https://hashscan.io/testnet/tx/0xe9ed21b47cd0580c22b659e3a99f34826403265f284146c58de6403192493a3b |
-| HCS records | topic seq 15–19 |
+| Create committee | https://hashscan.io/testnet/tx/0x0e9d956cc52594fe70b939aaf79c7660d7e9161664a01b4e19e5d8ec3135a168 |
+| Join (member1) | https://hashscan.io/testnet/tx/0x3d3a55c37647700ecea5c5dec16abb4be25c9722f6c96925ba280f8988b439d5 |
+| Join (member2) — HSS scheduled | https://hashscan.io/testnet/tx/0xf7de8b38afa0b4fe1c749a62b7488147e35043adee298f49488c337ec7d5115e |
+| HCS records | topic seq 31–34 |
 
 ## Project layout
 

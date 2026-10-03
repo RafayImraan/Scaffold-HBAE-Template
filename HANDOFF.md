@@ -19,15 +19,16 @@ Session resume notes. Source of truth: `BRIEF.md` (bounty), `PLAN.md` (approved 
   service stopped, `0x80070426`). SDK default valid-duration 120s → `TRANSACTION_EXPIRED`.
   Workaround: `.setTransactionValidDuration(180)` + anchor validStart to network block time
   in `createTopic.mjs` and `/api/hcs`.
-- Testnet demo script READY: `npm run hardhat:demo:testnet --` (explicit gasPrice, robust
-  event parsing, leaner preflight ~21.7 HBAR needed).
+- Testnet demo script READY: `npm run hardhat:demo:testnet --` (explicit gasPrice, 2.5M gas
+  for join HSS scheduling, leaner preflight ~21.7 HBAR needed).
+- **DEMO SUCCESS**: HSS scheduling WORKS — join2 emits `PayoutScheduled` with real schedule
+  address `0x...A58F2E` and `executeAt=1791076569`. HCS records written (seq 31–34).
 - Frontend committed (home + detail), blockexplorer removed, `npm run next:smoke --`
   green (5 core routes 200).
-- Quality gates ALL GREEN: lint (0 warnings), typecheck (both workspaces), build, compile,
-  44 tests passing.
-- Docs: README (Limitations, Units, Hashscan), AGENTS.md updated, PLAN/RESEARCH moved to
-  `docs/`, `scripts/verify-gate.sh` created.
-- Demo blocked on funding: deployer has ~18.7 HBAR, needs ~21.7 HBAR upfront for 6-min round.
+- Quality gates ALL GREEN: lint (0 warnings), typecheck (both), build, compile, 44 tests.
+- Docs: README (Limitations, Units, Hashscan), AGENTS.md, `scripts/verify-gate.sh`,
+  PLAN/RESEARCH in `docs/`.
+- Deployer funds exhausted from retries (~118 → 10 HBAR); demo needs ~21.7 HBAR upfront.
 
 ## Done
 
