@@ -3,37 +3,31 @@
 Session resume notes. Source of truth: `BRIEF.md` (bounty), `PLAN.md` (approved plan),
 `RESEARCH.md` (evidence + probe data).
 
-## Latest status (2026-10-01)
+## Latest status (2026-10-03)
 
 - Testnet deploy DONE: `ChainlinkHbarUsdAdapter` = `0x2545c7d156045158C081A09F157da44DcD322d23`
-  (block 41219920), `CommitteeFactory` = `0x9de9c4F3D1f52eA4278d6e8210F51C79eA88D9CF`
-  (block 41219927), unitsPerHbar = 1e8. `deployedContracts.ts` regenerated (296 entries only).
-- `npm run hardhat:test --` → **44 passing (7m), 0 failing**, incl. `Committee.fullCycle`
+  (block 41219920), `CommitteeFactory` = `0x56CCC11aaC8d028D0c7a0E9F7F954C797E9DaDC2`
+  (block 413248xx, `hssEnabled=true`), unitsPerHbar = 1e8. `deployedContracts.ts` regenerated.
+- `npm run hardhat:test --` → **44 passing (6m), 0 failing**, incl. `Committee.fullCycle`
   under BOTH regimes (`unitsPerHbar = tinybars (Hedera)` and `unitsPerHbar = wei (local)`),
   plus relayScale identity tests (1e10 tinybars / 1 wei, product = 1e18).
+- HSS fix DEPLOYED: `hssEnabled` flag replaces fragile `scheduleService.code.length` check;
+  Factory passes `hssEnabled=true` on Hedera (chainId 295/296), `false` locally.
 - HCS topic CREATED: **0.0.10809816** via `npm run hcs:topic --` (idempotent; writes
   `HCS_TOPIC_ID` into root `.env`).
-- Clock skew finding: this machine runs ~119s BEHIND Hedera consensus (Windows Time
+- Clock skew finding: this machine runs ~3h BEHIND Hedera consensus (Windows Time
   service stopped, `0x80070426`). SDK default valid-duration 120s → `TRANSACTION_EXPIRED`.
-  Workaround: `.setTransactionValidDuration(180)` (Hedera max) in `createTopic.mjs` and
-  `/api/hcs`. Margin ~61s - enable W32Time if drift grows.
-- Testnet demo script READY: `npm run hardhat:demo:testnet --`
-  (exit 2 = insufficient funds, exit 3 = scheduleCall failure → STOP for design review,
-  exit 4 = unit-math mismatch). Preflight needs ~23.7 HBAR; deployer holds 6.91 →
-  **demo BLOCKED on funding (~17 HBAR short)**.
+  Workaround: `.setTransactionValidDuration(180)` + anchor validStart to network block time
+  in `createTopic.mjs` and `/api/hcs`.
+- Testnet demo script READY: `npm run hardhat:demo:testnet --` (explicit gasPrice, robust
+  event parsing, leaner preflight ~21.7 HBAR needed).
 - Frontend committed (home + detail), blockexplorer removed, `npm run next:smoke --`
   green (5 core routes 200).
-
-## Next (in order)
-
-1. Fund deployer `0x6b93D069f3071aceC504339647fcB701949A43FB` (+~17 HBAR) → start
-   `npm run next:serve --` → `npm run hardhat:demo:testnet --` (short 6-min round):
-   create/join/contribute/HCS evidence, verify HSS auto-finalize vs manual path.
-2. Record every Hashscan link + unit-math confirmation in `docs/RESEARCH.md`
-   (move PLAN/RESEARCH to `docs/` first) and the README Hashscan section.
-3. Docs gate: README (Limitations first item = pot-receiver stops contributing,
-   Units section), AGENTS.md npm-only rewrite, `scripts/verify-gate.sh`, CI ABI-drift check.
-4. Phase 4 self-audit against `BRIEF.md` scoring + gate checklist.
+- Quality gates ALL GREEN: lint (0 warnings), typecheck (both workspaces), build, compile,
+  44 tests passing.
+- Docs: README (Limitations, Units, Hashscan), AGENTS.md updated, PLAN/RESEARCH moved to
+  `docs/`, `scripts/verify-gate.sh` created.
+- Demo blocked on funding: deployer has ~18.7 HBAR, needs ~21.7 HBAR upfront for 6-min round.
 
 ## Done
 

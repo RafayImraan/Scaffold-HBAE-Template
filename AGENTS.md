@@ -2,14 +2,13 @@
 
 Briefing for coding agents in this app (Cursor, Claude Code, Codex). Claude Code loads it through `CLAUDE.md`.
 
-This is a Scaffold-HBAR dApp: Next.js App Router, wallet connect, Debug Contracts, and Hedera networks (testnet, mainnet, local fork). The CLI may have left only Hardhat or only Foundry.
+This is a **hedera-committee** dApp: Next.js App Router, wallet connect, USD-denominated ROSCA (Committee/CommitteeFactory), Chainlink HBAR/USD oracle, HSS scheduled payouts, HCS audit log. Hardhat only (no Foundry).
 
 Use the package manager this project was created with (`packageManager` in the root `package.json`, or the lockfile). Examples use `yarn`; if the app was created with npm, swap `yarn <script>` for `npm run <script>`.
 
 ## Which Solidity package
 
 - `packages/hardhat` exists → Hardhat (`hardhat-deploy`)
-- `packages/foundry` exists → Foundry (Forge scripts)
 - `packages/nextjs` is always the frontend (App Router, RainbowKit, Wagmi, Viem, DaisyUI)
 
 Follow only the flavor that is present.
@@ -22,8 +21,6 @@ Package-prefixed scripts for package-specific work. Keep only truly cross-worksp
 # Local chain + deploy + frontend (separate terminals)
 npm run hardhat:chain --    # Hedera-forked Hardhat node on 8545
 npm run hardhat:deploy -- --network localhost
-npm run foundry:chain --    # Anvil from the Foundry package
-npm run foundry:deploy --
 npm run next:start --       # http://localhost:3000
 
 # Frontend only
@@ -34,13 +31,18 @@ npm run lint --
 npm run format --
 npm run next:build --
 npm run hardhat:compile --
-npm run foundry:compile --
 
 # Live networks
 npm run hardhat:deploy -- --network hederaTestnet   # or hederaMainnet
-npm run foundry:deploy -- --network hedera_testnet  # or hedera_mainnet
 npm run hardhat:verify:testnet --
-npm run foundry:verify:testnet --
+npm run hardhat:verify:mainnet --
+
+# HCS topic (idempotent)
+npm run hcs:topic --
+
+# Demo (testnet, 6-min round)
+npm run next:serve --       # must run for HCS relay
+npm run hardhat:demo:testnet --
 
 # Deployer account
 npm run hardhat:account:generate --
@@ -55,24 +57,24 @@ npm run hardhat:account --
 ### Hardhat
 
 - Contracts: `packages/hardhat/contracts/`
+  - `Committee.sol` — ROSCA logic, HSS scheduling, HCS events
+  - `CommitteeFactory.sol` — creates committees, passes `hssEnabled` flag
+  - `oracle/ChainlinkHbarUsdAdapter.sol` — Chainlink HBAR/USD adapter
+  - `oracle/MockPriceOracle.sol` — local testing oracle
+  - `mocks/MockScheduleService.sol` — local HSS mock
+  - `interfaces/IHederaScheduleService.sol`, `IPriceOracle.sol`, `IAggregatorV3.sol`
 - Deploy scripts: `packages/hardhat/deploy/`
+  - `00_deploy_oracle.ts`, `01_deploy_schedule_mock.ts`, `02_deploy_factory.ts`
 - Tests: `packages/hardhat/test/`
+  - 44 passing, both `unitsPerHbar` regimes (tinybars/wei)
 - Config: `packages/hardhat/hardhat.config.ts`
-- Tagged deploy: if `deployHederaToken.tags = ["HederaToken"]`, run `npm run hardhat:deploy -- --tags HederaToken`
-
-### Foundry
-
-- Contracts: `packages/foundry/contracts/`
-- Deploy scripts: `packages/foundry/script/` (`Deploy.s.sol`, `DeployHederaToken.s.sol`, `DeployHtsTokenCreator.s.sol`)
-- Tests: `packages/foundry/test/`
-- Config: `packages/foundry/foundry.toml`
-- One contract: `npm run foundry:deploy -- --file DeployHederaToken.s.sol`
+- Tagged deploy: `npm run hardhat:deploy -- --tags CommitteeFactory`
 
 ### After deploy
 
 ABIs and addresses are written to `packages/nextjs/contracts/deployedContracts.ts`. Put third-party contracts in `packages/nextjs/contracts/externalContracts.ts`.
 
-Sample contracts on this starter: `HederaToken` (ERC-20) and `HtsTokenCreator` (HTS precompile at `0x167`).
+Core contracts: `Committee`, `CommitteeFactory`, `ChainlinkHbarUsdAdapter`, `MockPriceOracle`, `MockScheduleService`.
 
 ## Frontend contract interaction
 
@@ -100,11 +102,11 @@ await writeContractAsync({
 });
 ```
 
-`HederaToken.mint` is `onlyOwner`. For HTS creation, `HtsTokenCreator.createToken` is payable (HTS fee via `msg.value`) and emits `TokenCreated`.
+For committee instances (no deployment entry), use raw `useReadContracts` / `useWriteContract` with address from `deployedContracts.ts` or factory `getCommittees()`.
 
 ### UI
 
-Use `@scaffold-hbar-ui/components` for web3 UI: `Address`, `AddressInput`, `Balance`, `EtherInput`, `IntegerInput`.
+Use `@scaffold-hbar-ui/components` for web3 UI: `Address`, `Balance`, `HederaAddress`, `HederaPortalFaucet`, `BaseInput`, `HederaAddressInput`, `HbarInput`.
 
 Use DaisyUI classes, not raw Tailwind when a DaisyUI component exists:
 
@@ -115,7 +117,6 @@ Use DaisyUI classes, not raw Tailwind when a DaisyUI component exists:
 ### Networks
 
 - Hardhat: `packages/hardhat/hardhat.config.ts` (`hederaTestnet` 296, `hederaMainnet` 295)
-- Foundry: `packages/foundry/foundry.toml` (`hedera_testnet`, `hedera_mainnet`)
 - Next.js: `packages/nextjs/scaffold.config.ts` (target networks, polling, RPC overrides, WalletConnect)
 
 ## Style

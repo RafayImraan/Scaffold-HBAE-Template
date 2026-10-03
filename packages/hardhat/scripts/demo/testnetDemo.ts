@@ -182,10 +182,18 @@ async function main(): Promise<void> {
   log(`round 1 ends at ${roundEndsAt} (≈ ${new Date(roundEndsAt * 1000).toISOString()})`);
 
   // --- contribute at the quoted amount (exact → refund must be 0) ---
-  const receipt1 = await (await committee.contribute({ value: valueFor(contractQuote), gasLimit: CONTRIBUTE_GAS_LIMIT, gasPrice })).wait();
+  const receipt1 = await (
+    await committee.contribute({ value: valueFor(contractQuote), gasLimit: CONTRIBUTE_GAS_LIMIT, gasPrice })
+  ).wait();
   if (!receipt1) throw new Error("contribute1 receipt missing");
   const c1 = receipt1.logs
-    .map(l => { try { return committee.interface.parseLog(l as Log); } catch { return null; } })
+    .map(l => {
+      try {
+        return committee.interface.parseLog(l as Log);
+      } catch {
+        return null;
+      }
+    })
     .find(e => e?.name === "ContributionReceived");
   if (!c1) throw new Error("expected ContributionReceived");
   log(
@@ -194,10 +202,20 @@ async function main(): Promise<void> {
   log(`HCS contribute1: ${await postHcs(receipt1.hash)}`);
 
   const [required2] = await committee.quoteContribution();
-  const receipt2 = await (await committee.connect(member2).contribute({ value: valueFor(required2), gasLimit: CONTRIBUTE_GAS_LIMIT, gasPrice })).wait();
+  const receipt2 = await (
+    await committee
+      .connect(member2)
+      .contribute({ value: valueFor(required2), gasLimit: CONTRIBUTE_GAS_LIMIT, gasPrice })
+  ).wait();
   if (!receipt2) throw new Error("contribute2 receipt missing");
   const c2 = receipt2.logs
-    .map(l => { try { return committee.interface.parseLog(l as Log); } catch { return null; } })
+    .map(l => {
+      try {
+        return committee.interface.parseLog(l as Log);
+      } catch {
+        return null;
+      }
+    })
     .find(e => e?.name === "ContributionReceived");
   if (!c2) throw new Error("expected ContributionReceived");
   log(
