@@ -1,0 +1,21 @@
+
+> sh@0.0.1 next:dev
+> npm run dev -w @sh/nextjs --
+
+
+> @sh/nextjs@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.5.27
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.10.18:3000
+
+ ✓ Starting...
+ ✓ Ready in 20.4s
+ ○ Compiling / ...
+/*! 🌼 daisyUI 5.7.47 */
+ ✓ Compiled / in 161.7s (14693 modules)
+(node:12760) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET / 200 in 27995ms
+ GET / 200 in 390ms

@@ -412,6 +412,734 @@ const deployedContracts = {
       deployedOnBlock: 41323387,
     },
   },
+  31337: {
+    CommitteeFactory: {
+      address: "0x0Ac85d55ebFc7f7b0cF4c13bb3BD6Eaf3909d62d",
+      abi: [
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "oracle_",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "scheduleService_",
+              type: "address",
+            },
+            {
+              internalType: "bool",
+              name: "hssEnabled_",
+              type: "bool",
+            },
+            {
+              internalType: "uint256",
+              name: "unitsPerHbar_",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "constructor",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "param",
+              type: "bytes32",
+            },
+          ],
+          name: "InvalidConfig",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "required",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "sent",
+              type: "uint256",
+            },
+          ],
+          name: "ReserveTooLow",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "ZeroAddress",
+          type: "error",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "index",
+              type: "uint256",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "committee",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "creator",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "usdAmountPerRound",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint8",
+              name: "maxMembers",
+              type: "uint8",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "roundDuration",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "maxPriceAge",
+              type: "uint256",
+            },
+          ],
+          name: "CommitteeCreated",
+          type: "event",
+        },
+        {
+          inputs: [],
+          name: "PAIR_KEY",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "usdAmountPerRound",
+              type: "uint256",
+            },
+            {
+              internalType: "uint8",
+              name: "maxMembers",
+              type: "uint8",
+            },
+            {
+              internalType: "uint256",
+              name: "roundDuration",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "maxPriceAge",
+              type: "uint256",
+            },
+          ],
+          name: "createCommittee",
+          outputs: [
+            {
+              internalType: "address",
+              name: "committee",
+              type: "address",
+            },
+          ],
+          stateMutability: "payable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "getCommittees",
+          outputs: [
+            {
+              internalType: "address[]",
+              name: "",
+              type: "address[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "hssEnabled",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "minReserve",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "oracle",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "scheduleService",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "unitsPerHbar",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 41372434,
+    },
+    MockPriceOracle: {
+      address: "0x737b8F095E3c575a6Ae5FE1711AdB8F271E20269",
+      abi: [
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "initialPriceE18",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "constructor",
+        },
+        {
+          inputs: [],
+          name: "MockOracleDown",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "PAIR_HBAR_USD",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          name: "latestPrice",
+          outputs: [
+            {
+              components: [
+                {
+                  internalType: "bytes32",
+                  name: "pairKey",
+                  type: "bytes32",
+                },
+                {
+                  internalType: "uint256",
+                  name: "priceE18",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "updatedAt",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct PriceData",
+              name: "",
+              type: "tuple",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "priceE18",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "revertOnRead",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "newPriceE18",
+              type: "uint256",
+            },
+          ],
+          name: "setPrice",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bool",
+              name: "shouldRevert",
+              type: "bool",
+            },
+          ],
+          name: "setRevertOnRead",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "newUpdatedAt",
+              type: "uint256",
+            },
+          ],
+          name: "setUpdatedAt",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "updatedAt",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+      ],
+      inheritedFunctions: {
+        latestPrice: "contracts/interfaces/IPriceOracle.sol",
+      },
+      deployedOnBlock: 41372430,
+    },
+    MockScheduleService: {
+      address: "0xAd3E631c01798f9aAE4692dabF791a62c226C5D4",
+      abi: [
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "schedule",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "int64",
+              name: "rc",
+              type: "int64",
+            },
+          ],
+          name: "ScheduleDeleted",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "schedule",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "bool",
+              name: "ok",
+              type: "bool",
+            },
+            {
+              indexed: false,
+              internalType: "int64",
+              name: "rc",
+              type: "int64",
+            },
+          ],
+          name: "ScheduleExecuted",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "schedule",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "executeAt",
+              type: "uint256",
+            },
+          ],
+          name: "Scheduled",
+          type: "event",
+        },
+        {
+          inputs: [],
+          name: "SUCCESS",
+          outputs: [
+            {
+              internalType: "int64",
+              name: "",
+              type: "int64",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "capacity",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "schedule",
+              type: "address",
+            },
+          ],
+          name: "deleteSchedule",
+          outputs: [
+            {
+              internalType: "int64",
+              name: "",
+              type: "int64",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "executeDueSchedule",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "executedCount",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "failDelete",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "failScheduleCode",
+          outputs: [
+            {
+              internalType: "int64",
+              name: "",
+              type: "int64",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "schedule",
+              type: "address",
+            },
+          ],
+          name: "getSchedule",
+          outputs: [
+            {
+              components: [
+                {
+                  internalType: "address",
+                  name: "to",
+                  type: "address",
+                },
+                {
+                  internalType: "uint256",
+                  name: "expirySecond",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "gasLimit",
+                  type: "uint256",
+                },
+                {
+                  internalType: "bytes",
+                  name: "callData",
+                  type: "bytes",
+                },
+                {
+                  internalType: "bool",
+                  name: "executed",
+                  type: "bool",
+                },
+                {
+                  internalType: "bool",
+                  name: "deleted",
+                  type: "bool",
+                },
+              ],
+              internalType: "struct MockScheduleService.Schedule",
+              name: "",
+              type: "tuple",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "expirySecond",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "gasLimit",
+              type: "uint256",
+            },
+          ],
+          name: "hasScheduleCapacity",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "expirySecond",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "gasLimit",
+              type: "uint256",
+            },
+            {
+              internalType: "uint64",
+              name: "",
+              type: "uint64",
+            },
+            {
+              internalType: "bytes",
+              name: "callData",
+              type: "bytes",
+            },
+          ],
+          name: "scheduleCall",
+          outputs: [
+            {
+              internalType: "int64",
+              name: "rc",
+              type: "int64",
+            },
+            {
+              internalType: "address",
+              name: "schedule",
+              type: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "scheduleCount",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bool",
+              name: "hasCapacity",
+              type: "bool",
+            },
+          ],
+          name: "setCapacity",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bool",
+              name: "shouldFail",
+              type: "bool",
+            },
+          ],
+          name: "setFailDelete",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "int64",
+              name: "code",
+              type: "int64",
+            },
+          ],
+          name: "setFailScheduleCode",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+      ],
+      inheritedFunctions: {
+        deleteSchedule: "contracts/interfaces/IHederaScheduleService.sol",
+        hasScheduleCapacity: "contracts/interfaces/IHederaScheduleService.sol",
+        scheduleCall: "contracts/interfaces/IHederaScheduleService.sol",
+      },
+      deployedOnBlock: 41372432,
+    },
+  },
 } as const;
 
 export default deployedContracts satisfies GenericContractsDeclaration;
